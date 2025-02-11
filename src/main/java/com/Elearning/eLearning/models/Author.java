@@ -2,18 +2,17 @@ package com.Elearning.eLearning.models;
 
 import com.Elearning.eLearning.utils.Auditable;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @Entity
+@Table(name = "author_tb")
 public class Author extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,6 +29,10 @@ public class Author extends Auditable {
 
     @Min(18)
     private Integer age;
+
+    @ManyToMany(mappedBy = "authors")
+    private List<Course> courses;
+
     private Boolean status;
 
     @PrePersist
