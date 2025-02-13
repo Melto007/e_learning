@@ -1,5 +1,7 @@
 package com.Elearning.eLearning.security;
 
+import com.Elearning.eLearning.services.JwtAuthEntryPoint;
+import io.jsonwebtoken.Jwt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,13 +26,16 @@ public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
     private final JwtFilter jwtFilter;
+    private final JwtAuthEntryPoint jwtAuthEntryPoint;
 
     public SecurityConfig(
             UserDetailsService userDetailsService,
-            JwtFilter jwtFilter
+            JwtFilter jwtFilter,
+            JwtAuthEntryPoint jwtAuthEntryPoint
     ) {
         this.userDetailsService = userDetailsService;
         this.jwtFilter = jwtFilter;
+        this.jwtAuthEntryPoint = jwtAuthEntryPoint;
     }
 
     @Bean
@@ -39,7 +44,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, JwtAuthEntryPoint jwtAuthEntryPoint) throws Exception {
         httpSecurity.csrf(AbstractHttpConfigurer::disable);
         httpSecurity.authorizeHttpRequests(
                 request -> request
@@ -47,6 +52,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
 
         );
+        httpSecurity.exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthEntryPoint));
         httpSecurity.httpBasic(Customizer.withDefaults());
         httpSecurity.sessionManagement(
                 session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)

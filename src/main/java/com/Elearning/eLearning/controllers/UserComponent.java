@@ -6,6 +6,8 @@ import com.Elearning.eLearning.services.UsersService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
@@ -21,11 +23,13 @@ public class UserComponent {
 
     @GetMapping("/")
     public ResponseEntity<ApiResponse<?>> userRequest(HttpServletRequest request) {
-       try {
-           return ResponseEntity.status(200).body(new ApiResponse<>(200, "Hello World", request.getSession().getId()));
-       } catch (HttpClientErrorException.Unauthorized e) {
-           return ResponseEntity.status(401).body(new ApiResponse<>(401, e.getMessage(), null));
-       }
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if(auth == null) {
+            return ResponseEntity.status(401).body(new ApiResponse<>(401, "Unauthorized Access!", null));
+        }
+
+        return ResponseEntity.status(200).body(new ApiResponse<>(200, "Hello World", null));
     }
 
     @GetMapping("/csrf-token")
