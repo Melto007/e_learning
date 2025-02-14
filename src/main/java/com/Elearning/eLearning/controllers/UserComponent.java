@@ -6,11 +6,11 @@ import com.Elearning.eLearning.services.UsersService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 
 @RestController
 @RequestMapping("${api.prefix}")
@@ -44,12 +44,37 @@ public class UserComponent {
     }
 
     @PostMapping("/register")
-    public Users saveRequest(@RequestBody Users users) {
-        return usersService.saveUser(users);
+    public ResponseEntity<ApiResponse<?>> saveRequest(@RequestBody Users users) {
+        try {
+            if(users.getUsername() == null || users.getUsername().isBlank()) {
+                return ResponseEntity.status(400)
+                        .body(new ApiResponse<>(400, "username is required", null));
+            } else if(users.getPassword() == null || users.getPassword().isBlank()) {
+                return ResponseEntity.status(400)
+                        .body(new ApiResponse<>(400, "password is required", null));
+            } else {
+                Users users1 = usersService.saveUser(users);
+                if(users1 != null) {
+                    return ResponseEntity.status(201)
+                            .body(new ApiResponse<>(201, "user registered success", null));
+                } else {
+                    return ResponseEntity.status(400)
+                            .body(new ApiResponse<>(400, "user couldn't saved", null));
+                }
+            }
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(409)
+                    .body(new ApiResponse<>(409, e.getMessage(), null));
+        }
     }
 
     @PostMapping("/login")
-    public String loginUser(@RequestBody Users users) {
-        return usersService.verify(users);
+    public ResponseEntity<ApiResponse<?>> loginUser(@RequestBody Users users) {
+        try {
+            String token = usersService.verify(users);
+            return ResponseEntity.status(200).body(new ApiResponse<>(200, "login success", token));
+        } catch (BadCredentialsException e) {
+            return ResponseEntity.status(401).body(new ApiResponse<>(200, e.getMessage(), null));
+        }
     }
 }

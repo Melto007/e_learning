@@ -33,11 +33,13 @@ public class UsersService {
         this.jwtService = jwtService;
     }
 
-    public Users saveUser(Users user) {
-        if(usersRepository.findByUsername(user.getUsername()).isPresent()) {
+    public Users saveUser(Users users) {
+        if(usersRepository.findByUsername(users.getUsername()).isPresent()) {
             throw new RuntimeException("user already exists");
         }
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        Users user = new Users();
+        user.setPassword(users.getUsername());
+        user.setPassword(passwordEncoder.encode(users.getPassword()));
         return userRepository.save(user);
     }
 
