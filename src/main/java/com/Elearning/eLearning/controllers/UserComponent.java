@@ -47,10 +47,10 @@ public class UserComponent {
         return (CsrfToken) request.getAttribute("_csrf");
     }
 
-    @PostMapping("/students")
-    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public String students() {
-        return "Students";
+        return "admin";
     }
 
     @PostMapping("/register")

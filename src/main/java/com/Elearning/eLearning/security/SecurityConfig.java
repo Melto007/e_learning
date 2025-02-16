@@ -49,10 +49,14 @@ public class SecurityConfig {
         httpSecurity.authorizeHttpRequests(
                 request -> request
                         .requestMatchers("/api/v1/register", "/api/v1/login").permitAll()
+                        .requestMatchers("/api/v1/admin").hasAuthority("ADMIN")
+                        .requestMatchers("/api/v1/users").hasAuthority("USER")
                         .anyRequest().authenticated()
 
         );
-        httpSecurity.exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthEntryPoint));
+        httpSecurity.exceptionHandling(
+                ex -> ex.authenticationEntryPoint(jwtAuthEntryPoint)
+        );
         httpSecurity.httpBasic(Customizer.withDefaults());
         httpSecurity.sessionManagement(
                 session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
