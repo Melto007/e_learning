@@ -1,6 +1,9 @@
 package com.Elearning.eLearning.services;
 
+import com.Elearning.eLearning.dto.UserDto;
+import com.Elearning.eLearning.models.Profile;
 import com.Elearning.eLearning.models.Users;
+import com.Elearning.eLearning.repositories.ProfileRepository;
 import com.Elearning.eLearning.repositories.UserRepository;
 import com.Elearning.eLearning.repositories.profile.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class UsersService {
     private final UserRepository userRepository;
@@ -17,6 +22,7 @@ public class UsersService {
     private final UsersRepository usersRepository;
     private final AuthenticationManager manager;
     private final JWTService jwtService;
+    private final ProfileRepository profileRepository;
 
     @Autowired
     public UsersService(
@@ -24,29 +30,42 @@ public class UsersService {
             PasswordEncoder passwordEncoder,
             UsersRepository usersRepository,
             AuthenticationManager manager,
-            JWTService jwtService
+            JWTService jwtService,
+            ProfileRepository profileRepository
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.usersRepository = usersRepository;
         this.manager = manager;
         this.jwtService = jwtService;
+        this.profileRepository = profileRepository;
     }
 
-    public Users saveUser(Users users) {
-        if(usersRepository.findByUsername(users.getUsername()).isPresent()) {
+    public Users saveUser(UserDto userDto) {
+        if(usersRepository.findByUsername(userDto.username()).isPresent()) {
             throw new RuntimeException("user already exists");
         }
+
+        if(profileRepository.findByEmail(userDto.email()).isPresent()) {
+            throw new RuntimeException("email already exists");
+        }
+
         Users user = new Users();
-        user.setPassword(users.getUsername());
-        user.setPassword(passwordEncoder.encode(users.getPassword()));
-        return userRepository.save(user);
+        user.setUsername(userDto.username());
+        user.setPassword(passwordEncoder.encode(userDto.password()));
+
+        Profile profile = new Profile();
+        profile.setEmail(userDto.email());
+        user.setProfile(profile);
+
+        return usersRepository.save(user);
     }
 
     public String verify(Users users) {
         Authentication authentication = manager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        users.getUsername(), users.getPassword()
+                        users.getUsername(),
+                        users.getPassword()
                 )
         );
 
@@ -55,5 +74,9 @@ public class UsersService {
         }
 
         throw new ArithmeticException("Unauthenticated");
+    }
+
+    public List<Users> getUsers() {
+        return usersRepository.findAllWithProfile();
     }
 }

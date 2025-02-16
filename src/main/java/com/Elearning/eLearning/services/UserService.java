@@ -21,12 +21,9 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Users users = userRepository.findByUsername(username);
+        return userRepository.findByUsername(username)
+                .map(UserPrinciple::new)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        if(users == null) {
-            System.out.print("User not found");
-            throw new UsernameNotFoundException("User not found");
-        }
-        return new UserPrinciple(users);
     }
 }
