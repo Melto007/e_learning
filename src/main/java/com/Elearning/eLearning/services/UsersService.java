@@ -1,7 +1,6 @@
 package com.Elearning.eLearning.services;
 
 import com.Elearning.eLearning.dto.UserDto;
-import com.Elearning.eLearning.models.Profile;
 import com.Elearning.eLearning.models.Role;
 import com.Elearning.eLearning.models.Users;
 import com.Elearning.eLearning.repositories.ProfileRepository;
@@ -21,31 +20,25 @@ import java.util.Set;
 
 @Service
 public class UsersService {
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final UsersRepository usersRepository;
     private final AuthenticationManager manager;
     private final JWTService jwtService;
     private final ProfileRepository profileRepository;
-    private final RoleRepository roleRepository;
+    private final UsersMapper usersMapper;
 
     @Autowired
     public UsersService(
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
             UsersRepository usersRepository,
             AuthenticationManager manager,
             JWTService jwtService,
             ProfileRepository profileRepository,
-            RoleRepository roleRepository
+            UsersMapper usersMapper
     ) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
         this.usersRepository = usersRepository;
         this.manager = manager;
         this.jwtService = jwtService;
         this.profileRepository = profileRepository;
-        this.roleRepository = roleRepository;
+        this.usersMapper = usersMapper;
     }
 
     public Users saveUser(UserDto userDto) {
@@ -57,19 +50,7 @@ public class UsersService {
             throw new RuntimeException("email already exists");
         }
 
-        Users user = new Users();
-        user.setUsername(userDto.username());
-        user.setPassword(passwordEncoder.encode(userDto.password()));
-
-        Role userRoles = roleRepository.findByRole(RoleEnum.ADMIN)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
-
-        user.setRoles(Set.of(userRoles));
-
-        Profile profile = new Profile();
-        profile.setEmail(userDto.email());
-        user.setProfile(profile);
-
+        var user = usersMapper.toUsers(userDto);
         return usersRepository.save(user);
     }
 

@@ -1,8 +1,6 @@
 package com.Elearning.eLearning.security;
 
 import com.Elearning.eLearning.services.JwtAuthEntryPoint;
-import io.jsonwebtoken.Jwt;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
