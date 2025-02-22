@@ -1,7 +1,6 @@
 package com.Elearning.eLearning.services;
 
 import com.Elearning.eLearning.models.UserPrinciple;
-import com.Elearning.eLearning.models.Users;
 import com.Elearning.eLearning.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;

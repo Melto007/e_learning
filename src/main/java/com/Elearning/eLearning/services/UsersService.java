@@ -1,22 +1,22 @@
 package com.Elearning.eLearning.services;
 
 import com.Elearning.eLearning.dto.UserDto;
-import com.Elearning.eLearning.models.Role;
 import com.Elearning.eLearning.models.Users;
 import com.Elearning.eLearning.repositories.ProfileRepository;
-import com.Elearning.eLearning.repositories.RoleRepository;
-import com.Elearning.eLearning.repositories.UserRepository;
 import com.Elearning.eLearning.repositories.profile.UsersRepository;
-import com.Elearning.eLearning.utils.RoleEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class UsersService {
@@ -25,6 +25,7 @@ public class UsersService {
     private final JWTService jwtService;
     private final ProfileRepository profileRepository;
     private final UsersMapper usersMapper;
+    private final UserService userService;
 
     @Autowired
     public UsersService(
@@ -32,13 +33,15 @@ public class UsersService {
             AuthenticationManager manager,
             JWTService jwtService,
             ProfileRepository profileRepository,
-            UsersMapper usersMapper
+            UsersMapper usersMapper,
+            UserService userService
     ) {
         this.usersRepository = usersRepository;
         this.manager = manager;
         this.jwtService = jwtService;
         this.profileRepository = profileRepository;
         this.usersMapper = usersMapper;
+        this.userService = userService;
     }
 
     public Users saveUser(UserDto userDto) {
@@ -54,7 +57,7 @@ public class UsersService {
         return usersRepository.save(user);
     }
 
-    public String verify(Users users) {
+    public Map<String, Object> verify(Users users) {
         Authentication authentication = manager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         users.getUsername(),
@@ -63,7 +66,19 @@ public class UsersService {
         );
 
         if(authentication.isAuthenticated()) {
-            return jwtService.generateToken(users.getUsername());
+            String token = jwtService.generateToken(users.getUsername());
+
+            Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+            List<String> roles = authorities.stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .toList();
+
+            String firstRole = roles.stream().findFirst().orElse("USER");
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("access_token", token);
+            response.put("roles", firstRole);
+            return response;
         }
 
         throw new ArithmeticException("Unauthenticated");
@@ -71,5 +86,34 @@ public class UsersService {
 
     public List<Users> getUsers() {
         return usersRepository.findAllWithProfile();
+    }
+
+    public Map<String, Object> getToken(String token, String roles) {
+        String username = jwtService.extractUsername(token);
+
+        if(username != null) {
+            String refresh_token = jwtService.generateRefreshToken(username);
+            Map<String, Object> response = new HashMap<>();
+            response.put("access_token", token);
+            response.put("refresh_token", refresh_token);
+            response.put("roles", roles);
+            return response;
+        }
+        return null;
+    }
+
+    public String checkRefreshToken(String token) {
+        String username = jwtService.extractUsername(token);
+
+        if(username != null) {
+            UserDetails userDetails = userService.loadUserByUsername(username);
+
+            if(jwtService.validateToken(token, userDetails)) {
+                return jwtService.generateToken(username);
+            } else {
+                return null;
+            }
+        }
+        return null;
     }
 }
